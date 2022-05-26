@@ -1,19 +1,24 @@
 """Async implementation of bcrypt"""
 
-import os
-import bcrypt
 import asyncio
-import typing as t
 import functools
+import os
 from concurrent.futures import ThreadPoolExecutor
+from typing import Callable, TypeVar
 
-P = t.ParamSpec("P")
-R = t.TypeVar("R")
+import bcrypt
+from typing_extensions import ParamSpec
 
-pool = ThreadPoolExecutor(max_workers=os.cpu_count() or 1, thread_name_prefix="aiobcrypt")
+P = ParamSpec("P")
+R = TypeVar("R")
+
+pool = ThreadPoolExecutor(
+    max_workers=os.cpu_count() or 1,
+    thread_name_prefix="aiobcrypt",
+)
 
 
-def aio(fn: t.Callable[P, R]) -> t.Callable[P, asyncio.Future[R]]:
+def aio(fn: Callable[P, R]) -> Callable[P, asyncio.Future[R]]:
     @functools.wraps(fn)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> asyncio.Future[R]:
         loop = asyncio.get_running_loop()
