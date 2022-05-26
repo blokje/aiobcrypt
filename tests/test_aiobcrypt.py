@@ -4,7 +4,7 @@ import pytest
 
 import aiobcrypt
 
-
+pytestmark = pytest.mark.asyncio
 _test_vectors = [
     (
         b"Kk4DQuMMfZL9o",
