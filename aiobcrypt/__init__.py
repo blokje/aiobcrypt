@@ -22,7 +22,9 @@ def aio(fn: Callable[P, R]) -> Callable[P, "asyncio.Future[R]"]:
     @functools.wraps(fn)
     def wrapper(*args: P.args, **kwargs: P.kwargs) -> "asyncio.Future[R]":
         loop = asyncio.get_running_loop()
-        return loop.run_in_executor(pool, functools.partial(fn, *args, **kwargs))
+        return loop.run_in_executor(
+            pool, functools.partial(fn, *args, **kwargs)
+        )
 
     return wrapper
 

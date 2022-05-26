@@ -209,7 +209,10 @@ async def test_gensalt_bad_prefix():
 
 async def test_gensalt_2a_prefix(monkeypatch):
     monkeypatch.setattr(os, "urandom", lambda n: b"0000000000000000")
-    assert await aiobcrypt.gensalt(prefix=b"2a") == b"$2a$12$KB.uKB.uKB.uKB.uKB.uK."
+    assert (
+        await aiobcrypt.gensalt(prefix=b"2a")
+        == b"$2a$12$KB.uKB.uKB.uKB.uKB.uK."
+    )
 
 
 @pytest.mark.parametrize(("password", "salt", "hashed"), _test_vectors)
@@ -430,7 +433,9 @@ async def test_kdf(rounds, password, salt, expected):
 
 async def test_kdf_str_password():
     with pytest.raises(TypeError):
-        await aiobcrypt.kdf("password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO", 10, 10)
+        await aiobcrypt.kdf(
+            "password", b"$2b$04$cVWp4XaNU8a4v1uMRum2SO", 10, 10
+        )
 
 
 async def test_kdf_str_salt():
@@ -472,4 +477,3 @@ async def test_2a_wraparound_bug():
         )
         == b"$2a$04$R1lJ2gkNaoPGdafE.H.16.1MKHPvmKwryeulRe225LKProWYwt9Oi"
     )
-
