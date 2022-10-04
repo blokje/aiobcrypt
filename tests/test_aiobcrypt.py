@@ -5,6 +5,7 @@ import pytest
 import aiobcrypt
 
 pytestmark = pytest.mark.asyncio
+
 _test_vectors = [
     (
         b"Kk4DQuMMfZL9o",
@@ -144,6 +145,20 @@ _test_vectors = [
         b"$2a$05$/OK.fbVrR/bpIqNJ5ianF.",
         b"$2a$05$/OK.fbVrR/bpIqNJ5ianF.Sa7shbm4.OzKpvFnX1pQLmQW96oUlCq",
     ),
+    (
+        b"}>\xb3\xfe\xf1\x8b\xa0\xe6(\xa2Lzq\xc3P\x7f\xcc\xc8b{\xf9\x14\xf6"
+        b"\xf6`\x81G5\xec\x1d\x87\x10\xbf\xa7\xe1}I7 \x96\xdfc\xf2\xbf\xb3Vh"
+        b"\xdfM\x88q\xf7\xff\x1b\x82~z\x13\xdd\xe9\x84\x00\xdd4",
+        b"$2b$10$keO.ZZs22YtygVF6BLfhGO",
+        b"$2b$10$keO.ZZs22YtygVF6BLfhGOI/JjshJYPp8DZsUtym6mJV2Eha2Hdd.",
+    ),
+    (
+        b"g7\r\x01\xf3\xd4\xd0\xa9JB^\x18\x007P\xb2N\xc7\x1c\xee\x87&\x83C"
+        b"\x8b\xe8\x18\xc5>\x86\x14/\xd6\xcc\x1cJ\xde\xd7ix\xeb\xdeO\xef"
+        b"\xe1i\xac\xcb\x03\x96v1' \xd6@.m\xa5!\xa0\xef\xc0(",
+        b"$2a$04$tecY.9ylRInW/rAAzXCXPO",
+        b"$2a$04$tecY.9ylRInW/rAAzXCXPOOlyYeCNzmNTzPDNSIFztFMKbvs/s5XG",
+    ),
 ]
 
 _2y_test_vectors = [
@@ -261,6 +276,11 @@ async def test_checkpw_bad_salt():
             b"badpass",
             b"$2b$04$?Siw3Nv3Q/gTOIPetAyPr.GNj3aO0lb1E5E9UumYGKjP9BYqlNWJe",
         )
+    with pytest.raises(ValueError):
+        await aiobcrypt.checkpw(
+            b"password",
+            b"$2b$3$mdEQPMOtfPX.WGZNXgF66OhmBlOGKEd66SQ7DyJPGucYYmvTJYviy",
+        )
 
 
 async def test_checkpw_str_password():
@@ -284,11 +304,10 @@ async def test_hashpw_str_salt():
 
 
 async def test_checkpw_nul_byte():
-    with pytest.raises(ValueError):
-        await aiobcrypt.checkpw(
-            b"abc\0def",
-            b"$2b$04$2Siw3Nv3Q/gTOIPetAyPr.GNj3aO0lb1E5E9UumYGKjP9BYqlNWJe",
-        )
+    await aiobcrypt.checkpw(
+        b"abc\0def",
+        b"$2b$04$2Siw3Nv3Q/gTOIPetAyPr.GNj3aO0lb1E5E9UumYGKjP9BYqlNWJe",
+    )
 
     with pytest.raises(ValueError):
         await aiobcrypt.checkpw(
@@ -299,8 +318,13 @@ async def test_checkpw_nul_byte():
 
 async def test_hashpw_nul_byte():
     salt = await aiobcrypt.gensalt(4)
-    with pytest.raises(ValueError):
-        await aiobcrypt.hashpw(b"abc\0def", salt)
+    hashed = await aiobcrypt.hashpw(b"abc\0def", salt)
+    assert await aiobcrypt.checkpw(b"abc\0def", hashed)
+    # assert that we are sensitive to changes in the password after the first
+    # null byte:
+    assert not await aiobcrypt.checkpw(b"abc\0deg", hashed)
+    assert not await aiobcrypt.checkpw(b"abc\0def\0", hashed)
+    assert not await aiobcrypt.checkpw(b"abc\0def\0\0", hashed)
 
 
 async def test_checkpw_extra_data():
